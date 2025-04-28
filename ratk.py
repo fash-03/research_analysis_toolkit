@@ -48,11 +48,34 @@ class Dataset(pd.DataFrame):
             dept_column = "Department"
         self[dept_column] = self[dept_column].str.strip().str.title()
         
-        for dept_name in self[dept_column]:
-            try:
-                dept_name in unique_dept_mappings_dict.keys()
-            except:
-                
+        dept_names = self[dept_column]
+        for dept_name in dept_names:
+            if dept_name in unique_dept_mappings_dict.keys():
+                continue
+            else:
+                closest_match = extractOne(dept_name, unique_dept_mappings_dict) 
+                # use score_cutoff method of extractOne if results are not reasonable
+                response = input(f"Is {closest_match[0]} the correct department name for {dept_name}? y/n")
+                if response.strip().lower() == "y":
+                    # Add the incorrect value to the mapping and then update the dept_name to the correct value
+                    correct_match = closest_match[0]
+                    unique_dept_mappings_dict[correct_match].append(dept_name)
+                    
+                    # Update its value in the list
+                    index = dept_names.index(dept_name)
+                    dept_names[index] = correct_match
+                elif response.strip().lower() == "n":
+                    res = input("What is the correct department name for {dept_name} then? [Input 's' or 'skip' to skip this instance")
+                    if res.strip().lower() in ["s", "skip"]:
+                        continue
+                    else:
+                        # Update with the value that is provided
+                        index = dept_names.index(dept_name)
+                        dept_names[index] = res
+                    
+                    
+        self[dept_column] = dept_names
+        return self
             
     def clean_faculty_column(self, faculty_column=None):
         if faculty_column is None:
